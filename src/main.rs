@@ -29,28 +29,34 @@ async fn main() {
 
     let legacy_rpc_client = LegacyRpcMethods::<PolkadotConfig>::new(rpc.clone());
     let b = legacy_rpc_client
-        .chain_get_block_hash(Some(NumberOrHex::Number(24413043)))
+        .chain_get_block_hash(Some(NumberOrHex::Number(24557921)))
         .await
         .unwrap()
         .unwrap();
 
-    assert_eq!(
-        b,
-        H256::from_str("0x30f5cb1b5f604f743d725a134ecb114f7e2c94ab9699ccd329ba5d8810f1aa68")
-            .unwrap()
-    );
+    // assert_eq!(
+    //     b,
+    //     H256::from_str("0x30f5cb1b5f604f743d725a134ecb114f7e2c94ab9699ccd329ba5d8810f1aa68")
+    //         .unwrap()
+    // );
 
-    let block = client.blocks().at(b).await.unwrap();
+    // let block = client.blocks().at(b).await.unwrap();
+
+    let block = client.blocks().at_latest().await.unwrap();
     let xts = block.extrinsics().await.unwrap();
 
     for xt in xts.iter() {
         let is_root_ext = xt.as_root_extrinsic::<src_chain::Call>().is_ok();
+        let ext_hash_via_events = xt.events().await.unwrap().extrinsic_hash();
         println!("is root extrinsic: {}", is_root_ext);
         println!(
-            "{}::{} => xt_hash={:?}",
+            "{}::{} => xt_hash={:?}, xt_hash_via_events={:?}",
             xt.pallet_name().unwrap(),
             xt.variant_name().unwrap(),
             xt.hash(),
+            ext_hash_via_events,
         );
+
+        assert_eq!(ext_hash_via_events, xt.hash());
     }
 }
